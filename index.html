@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexora — Simulador de Capacidad y KPIs (PEC)</title>
+<style>
+:root {
+--bg:#f1f5f9;
+--card:#fff;
+--border:#cbd5e1;
+--text:#0f172a;
+--muted:#64748b;
+--primary:#2563eb;
+--success:#16a34a;
+--danger:#dc2626;
+--warning:#d97706;
+}
+*{box-sizing:border-box;font-family:Segoe UI,Arial,sans-serif}
+body{margin:0;padding:20px;background:var(--bg);color:var(--text)}
+.header,.container,.compare-section,.footer{max-width:1250px;margin:0 auto}
+.header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;margin-bottom:20px}
+h1{font-size:23px;color:var(--primary);margin:0}
+.header p{font-size:13px;color:var(--muted);margin:4px 0 0}
+button{padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:white;font-weight:700;cursor:pointer;transition:.15s}
+button:hover{background:var(--primary);color:white;border-color:var(--primary)}
+button.btn-primary{background:var(--primary);color:white;border-color:var(--primary)}
+button.btn-primary:hover{background:#1d4ed8}
+button.btn-danger-sm{padding:4px 8px;font-size:11px;border-radius:5px}
+button.btn-danger-sm:hover{background:var(--danger);border-color:var(--danger);color:white}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:disabled:hover{background:white;color:var(--text);border-color:var(--border)}
+
+.container{display:grid;grid-template-columns:1fr 1.2fr;gap:18px}
+@media(max-width:900px){.container{grid-template-columns:1fr}}
+.card{background:white;border:1px solid var(--border);border-radius:12px;padding:18px;min-width:0;box-shadow:0 2px 6px #00000008}
+.section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:2px solid var(--bg);padding-bottom:9px;margin:0 0 15px}
+.section-head h2{border:none;margin:0;padding:0}
+h2{font-size:16px;border-bottom:2px solid var(--bg);padding-bottom:9px;margin:0 0 15px}
+h3{font-size:14px;margin:18px 0 10px}
+.lock-toggle{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;background:#f8fafc;border:1px solid var(--border);padding:5px 9px;border-radius:6px}
+.lock-toggle input{accent-color:var(--primary);cursor:pointer}
+.input-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.field{display:flex;flex-direction:column;min-width:0}
+.field label{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:5px}
+.field input{width:100%;padding:8px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-weight:600;background:white;color:var(--text)}
+.field input:disabled{background:#f1f5f9;color:#64748b;cursor:not-allowed;border-color:#e2e8f0}
+.decision-box{background:#f8fafc;border:1px solid var(--border);border-radius:9px;padding:12px;margin-bottom:11px}
+.decision-box.active{background:#f0fdf4;border-color:var(--success)}
+.decision-header{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.decision-header label{cursor:pointer}
+.decision-header input{accent-color:var(--success)}
+.decision-sub{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.decision-sub-3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:10px}
+@media(max-width:480px){.decision-sub-3{grid-template-columns:1fr 1fr}}
+.note{font-size:11px;color:var(--muted);margin-top:8px}
+.badge{font-size:9px;padding:3px 6px;border-radius:4px;background:#fef3c7;color:#92400e}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:17px}
+@media(max-width:600px){.kpi-row{grid-template-columns:1fr 1fr}}
+.kpi-card{background:#f8fafc;border:1px solid var(--border);border-radius:8px;padding:11px 6px;text-align:center}
+.kpi-title{font-size:10px;text-transform:uppercase;color:var(--muted);font-weight:800}
+.kpi-value{font-size:19px;font-weight:800;color:var(--primary);margin-top:5px;overflow-wrap:anywhere}
+.kpi-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.bar-item{margin-bottom:15px}
+.bar-top{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;margin-bottom:6px}
+.bar-track{height:14px;background:#e2e8f0;border-radius:8px;overflow:hidden}
+.bar-fill{height:100%;width:0;border-radius:8px;transition:width .3s}
+.alert{padding:13px;border-radius:8px;font-size:13px;font-weight:700;text-align:center;margin-top:15px}
+.alert-ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.alert-err{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0 18px;font-size:11px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.recommendation{background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:13px;margin-top:14px}
+.recommendation h3{margin:0 0 10px;color:#1d4ed8}
+.recommend-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.recommend-item{background:white;border:1px solid #dbeafe;padding:10px;border-radius:7px}
+.recommend-number{font-size:22px;font-weight:800;color:var(--primary)}
+.recommend-label{font-size:11px;color:var(--muted)}
+.section-note{padding:10px;background:#f8fafc;border-radius:7px;font-size:11px;color:var(--muted);line-height:1.5;margin-top:12px}
+.table-wrap{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:11px}
+th,td{padding:9px 7px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{background:#f8fafc;color:var(--muted)}
+
+/* COMPARADOR DE ALTERNATIVAS (MÁX. 3) */
+.compare-section{margin-top:18px}
+.compare-toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.compare-slots{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.slot-pill{font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.compare-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:950px){.compare-grid{grid-template-columns:1fr}}
+.alt-card{border:1px solid var(--border);border-radius:10px;padding:14px;background:#f8fafc;display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.alt-card.empty{border-style:dashed;background:#fcfcfd;align-items:center;justify-content:center;min-height:190px;color:var(--muted);text-align:center;font-size:12px}
+.alt-card.meets{border-color:#86efac;background:#f0fdf455}
+.alt-card.fails{border-color:#fca5a5;background:#fef2f255}
+.alt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.alt-title{font-size:14px;font-weight:800;color:var(--text)}
+.alt-status{font-size:10px;font-weight:800;padding:3px 7px;border-radius:5px;white-space:nowrap}
+.alt-status.ok{background:#dcfce7;color:#166534}
+.alt-status.err{background:#fee2e2;color:#991b1b}
+.alt-measures{font-size:11px;color:var(--muted);line-height:1.45}
+.alt-metrics{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.alt-metric{background:white;border:1px solid var(--border);border-radius:7px;padding:7px 8px}
+.alt-metric-lbl{font-size:9px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.alt-metric-val{font-size:13px;font-weight:800;color:var(--text);margin-top:2px}
+.alt-metric-val.best{color:var(--success)}
+.alt-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;padding-top:6px;border-top:1px solid var(--border)}
+
+.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<div>
+<h1>Nexora — Simulador de Capacidad y KPIs</h1>
+<p>Análisis de crecimiento de demanda, inversiones, contratación y distribución entre almacenes — PEC</p>
+</div>
+</div>
+
+<div class="container">
+<div class="card">
+<div class="section-head">
+<h2>1. Variables Operativas Base</h2>
+<label class="lock-toggle" title="Activa o desactiva la edición manual de las variables base (excepto Crecimiento previsto)">
+<input type="checkbox" id="toggle_base_editable" checked>
+Edición manual habilitada
+</label>
+</div>
+<div class="input-grid">
+<div class="field"><label>Pedidos diarios actuales</label><input type="number" class="base-lockable" id="in_orders" value="6000" min="0"></div>
+<div class="field"><label>Crecimiento previsto (%)</label><input type="number" id="in_growth" value="50" min="0"></div>
+<div class="field"><label>Operarios actuales Madrid</label><input type="number" class="base-lockable" id="in_staff" value="60" min="0"></div>
+<div class="field"><label>Productividad base (ped/hora)</label><input type="number" class="base-lockable" id="in_prod" value="15" min="0"></div>
+<div class="field"><label>Horas productivas / día</label><input type="number" class="base-lockable" id="in_hours" value="7" min="0"></div>
+<div class="field"><label>Días laborables / mes</label><input type="number" class="base-lockable" id="in_days" value="22" min="1"></div>
+<div class="field"><label>Capacidad Empaquetado Madrid</label><input type="number" class="base-lockable" id="in_pack" value="7000" min="0"></div>
+<div class="field"><label>Capacidad Expedición Madrid</label><input type="number" class="base-lockable" id="in_ship" value="8000" min="0"></div>
+</div>
+
+<h2>2. Decisiones e Inversiones</h2>
+<div class="decision-box" id="box_hires">
+<div class="decision-header"><label><input type="checkbox" id="dec_hires_enabled"> Contratación de operarios Madrid</label><span class="badge">PICKING</span></div>
+<div class="decision-sub">
+<div class="field"><label>Operarios contratados Madrid</label><input type="number" id="dec_hires" value="0" min="0" disabled></div>
+<div class="field"><label>Salario / operario (€/mes)</label><input type="number" id="cost_hire" value="2200" min="0"></div>
+</div>
+<div class="note">Aumenta exclusivamente la capacidad de preparación de pedidos. Al desmarcar, vuelve a 0.</div>
+</div>
+
+<div class="decision-box" id="box_tech">
+<div class="decision-header"><label><input type="checkbox" id="dec_tech"> Inversión tecnológica Madrid (Picking asistido)</label><span class="badge">PICKING</span></div>
+<div class="decision-sub">
+<div class="field"><label>Mejora productividad (%)</label><input type="number" id="val_tech" value="30" min="0"></div>
+<div class="field"><label>Coste fijo mensual (€)</label><input type="number" id="cost_tech" value="15000" min="0"></div>
+</div>
+<div class="note">Solo mejora la productividad del Picking en Madrid. Redondeo hacia abajo a pedidos enteros.</div>
+</div>
+
+<div class="decision-box" id="box_expand">
+<div class="decision-header"><label><input type="checkbox" id="dec_expand"> Ampliación de instalaciones Madrid</label><span class="badge">PACKING + SHIPPING</span></div>
+<div class="decision-sub">
+<div class="field"><label>Nueva capacidad Packing y Shipping</label><input type="number" id="val_expand" value="10000" min="0"></div>
+<div class="field"><label>Coste fijo mensual (€)</label><input type="number" id="cost_expand" value="20000" min="0"></div>
+</div>
+<div class="note">Aumenta exclusivamente Packing y Shipping. No modifica el Picking.</div>
+</div>
+
+<div class="decision-box" id="box_wh2">
+<div class="decision-header"><label><input type="checkbox" id="dec_wh2"> Apertura Segundo Almacén</label><span class="badge">CENTRO INDEPENDIENTE</span></div>
+<div class="decision-sub-3">
+<div class="field"><label>Capacidad integral máxima (ped/día)</label><input type="number" id="val_wh2" value="3500" min="0"></div>
+<div class="field"><label>Coste estructural mensual (€)</label><input type="number" id="cost_wh2" value="35000" min="0"></div>
+<div class="field"><label>Operarios contratados</label><input type="number" id="hires_wh2" value="0" min="0" disabled></div>
+</div>
+<div class="note">Productividad fija de 105 pedidos por operario/día. Sin inversión tecnológica. Los 3.500 pedidos/día incluyen Picking, Packing y Shipping.</div>
+<div class="note" id="wh2_cost_note"></div>
+</div>
+
+<h2>3. Leyenda de colores</h2>
+<div class="legend">
+<span><i class="dot" style="background:#2563eb"></i> Capacidad operativa</span>
+<span><i class="dot" style="background:#16a34a"></i> Decisión activa</span>
+<span><i class="dot" style="background:#d97706"></i> Cuello de botella</span>
+<span><i class="dot" style="background:#dc2626"></i> Déficit operativo</span>
+<span><i class="dot" style="background:#64748b"></i> Sin actividad</span>
+</div>
+</div>
+
+<div class="card">
+<h2>4. KPIs y Resultados Operativos</h2>
+<div class="kpi-row">
+<div class="kpi-card"><div class="kpi-title">Demanda Objetivo</div><div class="kpi-value" id="kpi_target">9.000</div><div class="kpi-sub">pedidos / día</div></div>
+<div class="kpi-card"><div class="kpi-title">Capacidad Total</div><div class="kpi-value" id="kpi_cap">6.300</div><div class="kpi-sub">pedidos / día</div></div>
+<div class="kpi-card"><div class="kpi-title">Coste Mensual</div><div class="kpi-value" id="kpi_cost">0 €</div><div class="kpi-sub">costes adicionales</div></div>
+<div class="kpi-card"><div class="kpi-title">Coste / Pedido Extra</div><div class="kpi-value" id="kpi_unit">0 €</div><div class="kpi-sub">€/pedido incremental</div></div>
+</div>
+
+<h3>Capacidad por proceso</h3>
+<div class="bar-item">
+<div class="bar-top"><span>1. Preparación Madrid (Picking)</span><span id="txt_pick"></span></div>
+<div class="bar-track"><div class="bar-fill" id="bar_pick"></div></div>
+<div class="note" id="detail_pick"></div>
+</div>
+<div class="bar-item">
+<div class="bar-top"><span>2. Empaquetado Madrid (Packing)</span><span id="txt_pack"></span></div>
+<div class="bar-track"><div class="bar-fill" id="bar_pack"></div></div>
+</div>
+<div class="bar-item">
+<div class="bar-top"><span>3. Expedición Madrid (Shipping)</span><span id="txt_ship"></span></div>
+<div class="bar-track"><div class="bar-fill" id="bar_ship"></div></div>
+</div>
+<div class="bar-item">
+<div class="bar-top"><span>4. Segundo Almacén (Capacidad integral)</span><span id="txt_wh2"></span></div>
+<div class="bar-track"><div class="bar-fill" id="bar_wh2"></div></div>
+<div class="note" id="detail_wh2"></div>
+</div>
+
+<div class="kpi-row" style="grid-template-columns:1fr 1fr;margin-top:18px">
+<div class="kpi-card"><div class="kpi-title">Utilización Capacidad</div><div class="kpi-value" id="kpi_util"></div><div class="kpi-sub">Demanda / Capacidad total</div></div>
+<div class="kpi-card"><div class="kpi-title">Productividad Madrid</div><div class="kpi-value" id="kpi_prod_op"></div><div class="kpi-sub">pedidos enteros / operario / día</div></div>
+</div>
+<div id="status_box" class="alert alert-err"></div>
+
+<div class="recommendation">
+<h3>5. Recomendación automática de plantilla</h3>
+<div class="recommend-grid">
+<div class="recommend-item">
+<div class="recommend-label">Operarios adicionales recomendados Madrid</div>
+<div class="recommend-number" id="rec_madrid">0</div>
+<div class="recommend-label" id="rec_madrid_detail"></div>
+</div>
+<div class="recommend-item">
+<div class="recommend-label">Operarios recomendados segundo almacén</div>
+<div class="recommend-number" id="rec_wh2">0</div>
+<div class="recommend-label" id="rec_wh2_detail"></div>
+</div>
+</div>
+<div class="section-note" id="staff_explanation"></div>
+</div>
+
+<h3>6. Distribución de pedidos entre centros</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>Concepto</th>
+<th>Madrid</th>
+<th>Segundo almacén</th>
+<th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Demanda asignada</td><td id="dist_madrid_demand"></td><td id="dist_wh2_demand"></td><td id="dist_total_demand"></td></tr>
+<tr><td>Capacidad real</td><td id="dist_madrid_cap"></td><td id="dist_wh2_cap"></td><td id="dist_total_cap"></td></tr>
+<tr><td>Operarios contratados</td><td id="dist_madrid_staff"></td><td id="dist_wh2_staff"></td><td id="dist_total_staff"></td></tr>
+<tr><td>Productividad por operario</td><td id="dist_madrid_prod"></td><td id="dist_wh2_prod"></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="section-note">
+<strong>Regla de distribución:</strong>
+Madrid procesa primero los pedidos hasta su capacidad real.
+El segundo almacén recibe el resto, hasta su límite integral de 3.500 pedidos/día.
+</div>
+</div>
+</div>
+
+<!-- COMPARADOR DE ALTERNATIVAS FIJADAS (MÁXIMO 3) -->
+<div class="card compare-section">
+<div class="compare-toolbar">
+<div>
+<h2 style="border:none;margin:0;padding:0">7. Comparador de Escenarios Fijados (Máx. 3)</h2>
+<div class="note" style="margin-top:3px">Fija hasta 3 configuraciones (Escenario A, Escenario B y Escenario C) para contrastar cumplimiento de demanda, capacidad, operarios y coste mensual.</div>
+</div>
+<div class="compare-slots">
+<span class="slot-pill" id="slots_counter">0 / 3 fijadas</span>
+<button class="btn-primary" id="btn_pin_alt" onclick="pinCurrentAlternative()">+ Fijar configuración actual</button>
+<button id="btn_clear_alts" onclick="clearAlternatives()">Limpiar todo</button>
+</div>
+</div>
+<div class="compare-grid" id="compare_grid"></div>
+</div>
+
+<div class="footer">
+Nexora — Simulador de capacidad operativa para la PEC. Valores enteros y costes incrementales de referencia.
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const number = id => {
+  const v = Number($(id).value);
+  return Number.isFinite(v) ? Math.max(0, v) : 0;
+};
+
+const fmt = n => Math.round(n).toLocaleString('es-ES');
+
+const money = n =>
+  n.toLocaleString('es-ES', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) + ' €';
+
+const setText = (id, v) => {
+  $(id).innerText = v;
+};
+
+function setBar(id, value, max, color) {
+  const pct = max > 0
+    ? Math.min(100, Math.max(0, value / max * 100))
+    : 0;
+
+  $(id).style.width = pct + '%';
+  $(id).style.background = color;
+}
+
+const SCENARIO_LABELS = ['Escenario A', 'Escenario B', 'Escenario C'];
+let latestSnapshot = null;
+let pinnedAlternatives = [];
+
+function syncBaseLockState() {
+  const isEditable = $('toggle_base_editable').checked;
+  document.querySelectorAll('.base-lockable').forEach(input => {
+    input.disabled = !isEditable;
+  });
+}
+
+function syncDecisionInputsState() {
+  const hiresEnabled = $('dec_hires_enabled').checked;
+  $('dec_hires').disabled = !hiresEnabled;
+  if (!hiresEnabled) {
+    $('dec_hires').value = 0;
+  }
+
+  const wh2Enabled = $('dec_wh2').checked;
+  $('hires_wh2').disabled = !wh2Enabled;
+  if (!wh2Enabled) {
+    $('hires_wh2').value = 0;
+  }
+}
+
+function recalc() {
+
+  // 1. VARIABLES OPERATIVAS
+
+  const orders = number('in_orders');
+  const growth = number('in_growth');
+  const staff = Math.floor(number('in_staff'));
+  const prod = number('in_prod');
+  const hours = number('in_hours');
+  const days = Math.max(1, number('in_days'));
+
+  const basePack = number('in_pack');
+  const baseShip = number('in_ship');
+
+  const hiresEnabled = $('dec_hires_enabled').checked;
+  const hires = hiresEnabled ? Math.floor(number('dec_hires')) : 0;
+  const costHire = number('cost_hire');
+
+  const useTech = $('dec_tech').checked;
+  const valTech = number('val_tech');
+  const costTech = number('cost_tech');
+
+  const useExpand = $('dec_expand').checked;
+  const valExpand = number('val_expand');
+  const costExpand = number('cost_expand');
+
+  const useWh2 = $('dec_wh2').checked;
+  const valWh2 = number('val_wh2');
+  const costWh2 = number('cost_wh2');
+  const hiresWh2 = useWh2 ? Math.floor(number('hires_wh2')) : 0;
+
+  // 2. DEMANDA PREVISTA
+
+  const target = Math.round(
+    orders * (1 + growth / 100)
+  );
+
+  const extraMonth = Math.max(
+    0, (target - orders) * days
+  );
+
+  // 3. PRODUCTIVIDAD POR OPERARIO
+  // Se utilizan exclusivamente pedidos enteros.
+
+  const madridPerOp = Math.floor(
+    prod * hours *
+    (useTech ? 1 + valTech / 100 : 1)
+  );
+
+  // Segundo almacén: productividad fija de 105
+  // pedidos/día por operario.
+
+  const wh2PerOp = 105;
+
+  // 4. CAPACIDAD DE MADRID
+
+  const madridStaff = staff + hires;
+
+  const capPick = madridStaff * madridPerOp;
+
+  const capPack = useExpand
+    ? valExpand
+    : basePack;
+
+  const capShip = useExpand
+    ? valExpand
+    : baseShip;
+
+  const capMadrid = Math.min(
+    capPick,
+    capPack,
+    capShip
+  );
+
+  // 5. RECOMENDACIÓN DE OPERARIOS MADRID
+
+  const hasMadridDecision = hiresEnabled || useTech || useExpand;
+  let recommendedMadrid = 0;
+  let requiredMadrid = madridStaff;
+  let plannedMadridCap = capMadrid;
+
+  if (!useWh2 && hasMadridDecision) {
+    const madridInfraLimit = Math.min(capPack, capShip);
+    const madridDemand = Math.min(target, madridInfraLimit);
+
+    requiredMadrid = madridPerOp > 0
+      ? Math.ceil(madridDemand / madridPerOp)
+      : 0;
+
+    recommendedMadrid = Math.max(
+      0,
+      requiredMadrid - madridStaff
+    );
+
+    plannedMadridCap = Math.min(
+      madridDemand,
+      (madridStaff + recommendedMadrid) * madridPerOp
+    );
+  }
+
+  // 6. SEGUNDO ALMACÉN
+
+  const remainingDemand = useWh2
+    ? Math.max(0, target - capMadrid)
+    : 0;
+
+  const wh2Demand = useWh2
+    ? Math.min(remainingDemand, valWh2)
+    : 0;
+
+  const requiredWh2 = useWh2 && wh2PerOp > 0
+    ? Math.ceil(wh2Demand / wh2PerOp)
+    : 0;
+
+  const capWh2 = useWh2
+    ? Math.min(valWh2, hiresWh2 * wh2PerOp)
+    : 0;
+
+  // 7. CAPACIDAD TOTAL REAL
+
+  const totalCap = capMadrid + capWh2;
+
+  const deficit = Math.max(
+    0, target - totalCap
+  );
+
+  const surplus = Math.max(
+    0, totalCap - target
+  );
+
+  const utilization = totalCap > 0
+    ? target / totalCap * 100
+    : (target > 0 ? 100 : 0);
+
+  // 8. COSTES MENSUALES
+
+  const madridSalaryCost = hires * costHire;
+
+  const wh2SalaryCost = useWh2 ? hiresWh2 * costHire : 0;
+
+  const totalWh2Cost = useWh2
+    ? costWh2 + wh2SalaryCost
+    : 0;
+
+  const totalCost =
+    madridSalaryCost +
+    (useTech ? costTech : 0) +
+    (useExpand ? costExpand : 0) +
+    totalWh2Cost;
+
+  const unitCost = extraMonth > 0
+    ? totalCost / extraMonth
+    : 0;
+
+  // 9. CUELLOS DE BOTELLA
+
+  const bottleneckPick =
+    capPick <= capPack &&
+    capPick <= capShip;
+
+  const bottleneckPack =
+    capPack <= capPick &&
+    capPack <= capShip;
+
+  const bottleneckShip =
+    capShip <= capPick &&
+    capShip <= capPack;
+
+  const maxRef = Math.max(
+    12000,
+    target,
+    capPick,
+    capPack,
+    capShip,
+    valWh2
+  );
+
+  // 10. ACTUALIZAR KPIs
+
+  setText('kpi_target', fmt(target));
+  setText('kpi_cap', fmt(totalCap));
+  setText('kpi_cost', money(totalCost));
+  setText('kpi_unit', money(unitCost));
+
+  setText(
+    'kpi_util',
+    utilization.toFixed(1).replace('.', ',') + ' %'
+  );
+
+  setText('kpi_prod_op', fmt(madridPerOp));
+
+  // 11. BARRAS DE CAPACIDAD
+
+  setText('txt_pick', fmt(capPick) + ' ped/día');
+  setText('txt_pack', fmt(capPack) + ' ped/día');
+  setText('txt_ship', fmt(capShip) + ' ped/día');
+  setText('txt_wh2', fmt(capWh2) + ' ped/día');
+
+  setBar(
+    'bar_pick', capPick, maxRef,
+    bottleneckPick ? '#d97706' : '#2563eb'
+  );
+
+  setBar(
+    'bar_pack', capPack, maxRef,
+    bottleneckPack ? '#d97706' : '#2563eb'
+  );
+
+  setBar(
+    'bar_ship', capShip, maxRef,
+    bottleneckShip ? '#d97706' : '#2563eb'
+  );
+
+  setBar(
+    'bar_wh2', capWh2, maxRef,
+    useWh2 ? '#16a34a' : '#64748b'
+  );
+
+  setText(
+    'detail_pick',
+    'Productividad: ' + fmt(madridPerOp) +
+    ' pedidos/operario/día. Plantilla: ' +
+    fmt(madridStaff) + ' operarios.'
+  );
+
+  setText(
+    'detail_wh2',
+    useWh2
+      ? 'Plantilla: ' + fmt(hiresWh2) +
+        ' operarios. Productividad fija: 105 pedidos/día.'
+      : 'Segundo almacén desactivado.'
+  );
+
+  // 12. ESTADO OPERATIVO
+
+  const status = $('status_box');
+
+  if (deficit === 0) {
+    status.className = 'alert alert-ok';
+    status.innerText =
+      'CAPACIDAD SUFICIENTE: Superávit operativo de +' +
+      fmt(surplus) + ' pedidos/día.';
+  } else {
+    status.className = 'alert alert-err';
+    status.innerText =
+      'DÉFICIT OPERATIVO: Faltan ' +
+      fmt(deficit) +
+      ' pedidos/día para cubrir la demanda.';
+  }
+
+  // 13. RECOMENDACIÓN DE PLANTILLA
+
+  setText('rec_madrid', fmt(recommendedMadrid));
+
+  setText(
+    'rec_madrid_detail',
+    useWh2
+      ? 'No aplica contratación adicional en Madrid al evaluar el 2º almacén.'
+      : hasMadridDecision
+        ? 'Plantilla objetivo: ' + fmt(requiredMadrid) +
+          ' operarios. Plantilla actual en Madrid: ' + fmt(madridStaff) + '.'
+        : 'Sin decisiones activas en Madrid.'
+  );
+
+  setText(
+    'rec_wh2',
+    useWh2 ? fmt(requiredWh2) : '0'
+  );
+
+  setText(
+    'rec_wh2_detail',
+    useWh2
+      ? 'Operarios necesarios para cubrir el volumen restante.'
+      : 'Activa el segundo almacén para calcular su plantilla.'
+  );
+
+  setText(
+    'staff_explanation',
+    useWh2
+      ? 'Al activar el segundo almacén, la recomendación adicional en Madrid se fija en 0 operarios y el segundo centro requiere ' +
+        fmt(requiredWh2) + ' operarios para absorber los ' + fmt(wh2Demand) +
+        ' pedidos/día restantes (límite integral: ' + fmt(valWh2) + ' ped/día).'
+      : hasMadridDecision
+        ? 'Madrid requiere ' + fmt(recommendedMadrid) +
+          ' operarios adicionales para alcanzar su capacidad planificada de ' +
+          fmt(plannedMadridCap) + ' pedidos/día.'
+        : 'No hay decisiones de inversión o contratación activas; la recomendación adicional es 0.'
+  );
+
+  // 14. DISTRIBUCIÓN ENTRE ALMACENES
+
+  const madridAssigned = Math.min(
+    target, capMadrid
+  );
+
+  const actualWh2Demand = Math.max(
+    0, target - madridAssigned
+  );
+
+  const actualWh2Assigned = Math.min(
+    actualWh2Demand, capWh2
+  );
+
+  setText('dist_madrid_demand', fmt(madridAssigned));
+  setText('dist_wh2_demand', fmt(actualWh2Assigned));
+
+  setText(
+    'dist_total_demand',
+    fmt(madridAssigned + actualWh2Assigned)
+  );
+
+  setText('dist_madrid_cap', fmt(capMadrid));
+  setText('dist_wh2_cap', fmt(capWh2));
+  setText('dist_total_cap', fmt(totalCap));
+
+  setText('dist_madrid_staff', fmt(madridStaff));
+  setText('dist_wh2_staff', fmt(hiresWh2));
+
+  setText(
+    'dist_total_staff',
+    fmt(madridStaff + hiresWh2)
+  );
+
+  setText('dist_madrid_prod', fmt(madridPerOp));
+  setText('dist_wh2_prod', fmt(wh2PerOp));
+
+  // 15. COSTES DEL SEGUNDO ALMACÉN
+
+  setText(
+    'wh2_cost_note',
+    useWh2
+      ? 'Coste total segundo almacén: ' +
+        money(totalWh2Cost) +
+        ' (estructura: ' + money(costWh2) +
+        ' + salarios: ' + money(wh2SalaryCost) + ').'
+      : 'Segundo almacén desactivado: 0 €.'
+  );
+
+  // 16. COLORES DE DECISIONES ACTIVAS
+
+  $('box_hires').classList.toggle('active', hiresEnabled);
+  $('box_tech').classList.toggle('active', useTech);
+  $('box_expand').classList.toggle('active', useExpand);
+  $('box_wh2').classList.toggle('active', useWh2);
+
+  // 17. SNAPSHOT PARA COMPARADOR
+
+  const activeMeasures = [];
+  if (hiresEnabled && hires > 0) activeMeasures.push('+' + fmt(hires) + ' op. Madrid');
+  if (useTech) activeMeasures.push('Tech +' + fmt(valTech) + '%');
+  if (useExpand) activeMeasures.push('Amp. ' + fmt(valExpand));
+  if (useWh2) activeMeasures.push('2º Almacén (' + fmt(hiresWh2) + ' op.)');
+
+  latestSnapshot = {
+    target,
+    totalCap,
+    deficit,
+    surplus,
+    meetsDemand: deficit === 0,
+    totalCost,
+    unitCost,
+    totalStaff: madridStaff + hiresWh2,
+    hiresTotal: hires + hiresWh2,
+    measuresText: activeMeasures.length ? activeMeasures.join(' · ') : 'Sin medidas activas'
+  };
+}
+
+function pinCurrentAlternative() {
+  if (!latestSnapshot || pinnedAlternatives.length >= 3) return;
+  pinnedAlternatives.push({ ...latestSnapshot });
+  renderComparison();
+}
+
+function removeAlternative(index) {
+  pinnedAlternatives.splice(index, 1);
+  renderComparison();
+}
+
+function clearAlternatives() {
+  pinnedAlternatives = [];
+  renderComparison();
+}
+
+function renderComparison() {
+  const grid = $('compare_grid');
+  const counter = $('slots_counter');
+  const pinBtn = $('btn_pin_alt');
+
+  counter.innerText = pinnedAlternatives.length + ' / 3 fijadas';
+  pinBtn.disabled = pinnedAlternatives.length >= 3;
+
+  const validAlts = pinnedAlternatives.filter(a => a.meetsDemand);
+  const lowestCost = validAlts.length
+    ? Math.min(...validAlts.map(a => a.totalCost))
+    : null;
+
+  let html = '';
+
+  for (let i = 0; i < 3; i++) {
+    const fixedName = SCENARIO_LABELS[i];
+    const alt = pinnedAlternatives[i];
+    if (!alt) {
+      html += `
+        <div class="alt-card empty">
+          <div>
+            <strong>${fixedName}</strong><br>
+            Hueco libre — ajusta variables o decisiones y pulsa <em>"+ Fijar configuración actual"</em>.
+          </div>
+        </div>
+      `;
+      continue;
+    }
+
+    const cardClass = alt.meetsDemand ? 'alt-card meets' : 'alt-card fails';
+    const badgeClass = alt.meetsDemand ? 'alt-status ok' : 'alt-status err';
+    const badgeText = alt.meetsDemand ? 'CUMPLE DEMANDA' : 'NO CUMPLE (-' + fmt(alt.deficit) + ')';
+    const isBestCost = alt.meetsDemand && lowestCost !== null && alt.totalCost === lowestCost;
+    const balanceText = alt.meetsDemand ? '+' + fmt(alt.surplus) + ' ped/día' : '-' + fmt(alt.deficit) + ' ped/día';
+
+    html += `
+      <div class="${cardClass}">
+        <div>
+          <div class="alt-top">
+            <div class="alt-title">${fixedName}</div>
+            <span class="${badgeClass}">${badgeText}</span>
+          </div>
+          <div class="alt-measures" style="margin-top:6px">${alt.measuresText}</div>
+        </div>
+
+        <div class="alt-metrics">
+          <div class="alt-metric">
+            <div class="alt-metric-lbl">Capacidad / Obj.</div>
+            <div class="alt-metric-val">${fmt(alt.totalCap)} / ${fmt(alt.target)}</div>
+          </div>
+          <div class="alt-metric">
+            <div class="alt-metric-lbl">Margen / Déficit</div>
+            <div class="alt-metric-val">${balanceText}</div>
+          </div>
+          <div class="alt-metric">
+            <div class="alt-metric-lbl">Coste Mensual</div>
+            <div class="alt-metric-val ${isBestCost ? 'best' : ''}">${money(alt.totalCost)}${isBestCost ? ' ★' : ''}</div>
+          </div>
+          <div class="alt-metric">
+            <div class="alt-metric-lbl">Coste / Ped. Extra</div>
+            <div class="alt-metric-val">${money(alt.unitCost)}</div>
+          </div>
+        </div>
+
+        <div class="alt-actions">
+          <span class="note" style="margin:0">Plantilla total: <strong>${fmt(alt.totalStaff)}</strong> op. (altas: ${fmt(alt.hiresTotal)})</span>
+          <button class="btn-danger-sm" onclick="removeAlternative(${i})">Quitar</button>
+        </div>
+      </div>
+    `;
+  }
+
+  grid.innerHTML = html;
+}
+
+$('toggle_base_editable').addEventListener('change', () => {
+  syncBaseLockState();
+  recalc();
+});
+
+$('dec_hires_enabled').addEventListener('change', () => {
+  syncDecisionInputsState();
+  recalc();
+});
+
+$('dec_wh2').addEventListener('change', () => {
+  syncDecisionInputsState();
+  recalc();
+});
+
+document.querySelectorAll('input').forEach(input => {
+  if (input.id === 'toggle_base_editable' || input.id === 'dec_hires_enabled' || input.id === 'dec_wh2') return;
+  input.addEventListener('input', recalc);
+  input.addEventListener('change', recalc);
+});
+
+syncBaseLockState();
+syncDecisionInputsState();
+recalc();
+renderComparison();
+
+</script>
+</body>
+</html>
